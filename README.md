@@ -1,3 +1,3 @@
 Running this application will require the following packages:
-- requests
-- bs4
+- requests (https://pypi.org/project/requests/)
+- bs4 (https://pypi.org/project/beautifulsoup4/)
