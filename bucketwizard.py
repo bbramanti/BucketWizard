@@ -3,7 +3,6 @@ import re
 from teams import teams
 from bs4 import BeautifulSoup
 from PyInquirer import prompt
-from pprint import pprint
 
 def get_abbrev(team):
 	for key,value in teams.items():
