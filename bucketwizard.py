@@ -81,7 +81,7 @@ def collect_data(team, year, selection):
             # confirm if user wants to view more of this team's stats
             questions = [{
                 'type': 'confirm',
-                'message': 'Continue viewing ' + team + ' stats?',
+                'message': 'Continue viewing ' + team + ' data?',
                 'name': 'continue',
                 'default': True,
             }]
@@ -89,10 +89,18 @@ def collect_data(team, year, selection):
             if (answers['continue'] is False):
                 # exit
                 running = False
-                # else: user makes stat selection again
+            else:
+                # let user select new piece of data
+                questions = [{
+                    'type': 'list',
+                    'message': 'What data would you like to view?',
+                    'name': 'data_selection',
+                    'choices': ['Team Roster', 'Player Salaries']
+                }]
+                answers = prompt(questions)
+                selection = answers['data_selection']
 
         print ("bucketwizard shutting down ...")
-        # option here to allow user to cycle back to main()
 
     elif (page.status_code == 404):
         print("page not found, spelling of team may be incorrect")
@@ -102,25 +110,25 @@ def main():
     questions = [{
         'type': 'list',
         'name': 'team_name',
-        'message': 'What team\'s data would you like to view?',
-        'choices': teams.keys()
+        'message': 'Select a Team: ',
+        'choices': sorted(teams.keys())
         },
         {
         'type': 'list',
         'name': 'team_year',
-        'message': 'Which year?',
+        'message': 'Select a Year: ',
         'choices': ['2013-2014', '2014-2015', '2015-2016', '2016-2017',
                     '2017-2018', '2018-2019']
         },
         {
         'type': 'list',
-        'name': 'stat_selection',
-        'message': 'Which data would you like to view?',
+        'name': 'data_selection',
+        'message': 'What data would you like to view?',
         'choices': ['Team Roster', 'Player Salaries']
         }]
     answers = prompt(questions)
     collect_data(
-        answers['team_name'], answers['team_year'], answers['stat_selection'])
+        answers['team_name'], answers['team_year'], answers['data_selection'])
 
 
 if __name__ == "__main__":
