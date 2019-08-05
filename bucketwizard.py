@@ -58,6 +58,37 @@ def get_roster(html):
         print ("cannot retrieve table")
 
 
+def get_per_game(html):
+    table = html.find(id="per_game")
+    per_game_stats = []
+    if (table):
+        # get table headers
+        header = table.find('thead')
+        header_row = header.find('tr')
+        headers = []
+        for th in header_row.find_all('th'):
+            # check for &nbsp using strip()
+            if (th.text.strip()):
+                headers.append(th.text)
+        # add header for player name
+        headers.insert(1, "Name")
+        # get table data
+        rows = table.find_all('tr')
+        for tr in rows:
+            td = tr.find_all(['td', 'th'])
+            data = [x.text for x in td]
+            per_game_stats.append(data)
+        # remove empty header row
+        per_game_stats = per_game_stats[1:]
+        # final print to user
+        print()
+        print(tabulate(
+            per_game_stats, headers=headers, tablefmt="github"))
+        print()
+    else:
+        print ("cannot retrieve table")
+
+
 def collect_data(team, year, selection):
     selected_team = teams[team]
     # if 2015-2016, grab 2016
@@ -77,6 +108,8 @@ def collect_data(team, year, selection):
                 get_salary(soup)
             if (selection == 'Team Roster'):
                 get_roster(soup)
+            if (selection == 'Per Game'):
+                get_per_game(soup)
 
             # confirm if user wants to view more of this team's stats
             questions = [{
@@ -95,7 +128,7 @@ def collect_data(team, year, selection):
                     'type': 'list',
                     'message': 'What data would you like to view?',
                     'name': 'data_selection',
-                    'choices': ['Team Roster', 'Player Salaries']
+                    'choices': ['Team Roster', 'Player Salaries', 'Per Game']
                 }]
                 answers = prompt(questions)
                 selection = answers['data_selection']
@@ -110,13 +143,13 @@ def main():
     questions = [{
         'type': 'list',
         'name': 'team_name',
-        'message': 'Select a Team: ',
+        'message': 'Select Team: ',
         'choices': sorted(teams.keys())
         },
         {
         'type': 'list',
         'name': 'team_year',
-        'message': 'Select a Year: ',
+        'message': 'Select Year: ',
         'choices': ['2013-2014', '2014-2015', '2015-2016', '2016-2017',
                     '2017-2018', '2018-2019']
         },
@@ -124,7 +157,7 @@ def main():
         'type': 'list',
         'name': 'data_selection',
         'message': 'What data would you like to view?',
-        'choices': ['Team Roster', 'Player Salaries']
+        'choices': ['Team Roster', 'Player Salaries', 'Per Game']
         }]
     answers = prompt(questions)
     collect_data(
