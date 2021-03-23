@@ -1,6 +1,6 @@
 import requests
 import re
-from teams import teams
+from teams import teams, seasons, choices
 from bs4 import BeautifulSoup
 from PyInquirer import prompt
 from tabulate import tabulate
@@ -57,6 +57,14 @@ def get_roster(html):
     else:
         print ("cannot retrieve table")
 
+def clean_per_game(headers, stats):
+    # replace the first "Rk" or Rank header with "Name
+    headers[0] = "Name"
+    # remove first row of stats, it restates the headers
+    stats = stats[1:]
+    # remove first stat for each player (has no value)
+    stats = [player[1:] for player in stats]
+    return headers, stats
 
 def get_per_game(html):
     table = html.find(id="per_game")
@@ -70,31 +78,31 @@ def get_per_game(html):
             # check for &nbsp using strip()
             if (th.text.strip()):
                 headers.append(th.text)
-        # add header for player name
-        headers.insert(1, "Name")
         # get table data
         rows = table.find_all('tr')
         for tr in rows:
             td = tr.find_all(['td', 'th'])
             data = [x.text for x in td]
             per_game_stats.append(data)
-        # remove empty header row
-        per_game_stats = per_game_stats[1:]
+        # clean up data in both headers, and per_game_stats
+        cleaned_headers, cleaned_per_game_stats = clean_per_game(headers, per_game_stats)
         # final print to user
         print()
-        print(tabulate(
-            per_game_stats, headers=headers, tablefmt="github"))
+        print(tabulate(cleaned_per_game_stats, headers=cleaned_headers, tablefmt="github"))
         print()
     else:
         print ("cannot retrieve table")
 
 
 def collect_data(team, year, selection):
+    # build out full URL
     selected_team = teams[team]
-    # if 2015-2016, grab 2016
     selected_year = year[5:]
     url = "https://www.basketball-reference.com/teams/"
     url += selected_team+"/"+selected_year+".html"
+
+    # print to terminal , and send out request
+    print("Scraping From: " + url)
     page = requests.get(url)
 
     if (page.status_code == 200):
@@ -150,14 +158,13 @@ def main():
         'type': 'list',
         'name': 'team_year',
         'message': 'Select Year: ',
-        'choices': ['2013-2014', '2014-2015', '2015-2016', '2016-2017',
-                    '2017-2018', '2018-2019']
+        'choices': seasons
         },
         {
         'type': 'list',
         'name': 'data_selection',
         'message': 'What data would you like to view?',
-        'choices': ['Team Roster', 'Player Salaries', 'Per Game']
+        'choices': choices
         }]
     answers = prompt(questions)
     collect_data(

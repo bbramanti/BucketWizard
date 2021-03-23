@@ -1,3 +1,4 @@
+# all 30 NBA team names mapped to abbreviation
 teams = {
     "Atlanta Hawks": "ATL",
     "Brooklyn Nets": "BRK",
@@ -30,3 +31,22 @@ teams = {
     "Utah Jazz": "UTA",
     "Washington Wizards": "WAS"
 }
+
+# available seasons to pull data from
+seasons = [
+    '2013-2014',
+    '2014-2015',
+    '2015-2016',
+    '2016-2017',
+    '2017-2018',
+    '2018-2019',
+    '2019-2020',
+    '2020-2021'
+]
+
+# available data options to pull
+choices = [
+    'Team Roster',
+    'Player Salaries',
+    'Per Game'
+]
