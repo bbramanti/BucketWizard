@@ -1,9 +1,9 @@
 import requests
 import re
-from teams import teams, seasons, choices
 from bs4 import BeautifulSoup
 from PyInquirer import prompt
 from tabulate import tabulate
+from teams import teams, seasons, choices
 
 
 def get_salary(html):
@@ -122,16 +122,12 @@ def collect_data(team, year, selection):
             # confirm if user wants to view more of this team's stats
             questions = [{
                 'type': 'confirm',
-                'message': 'Continue viewing ' + team + ' data?',
+                'message': 'Continue viewing {} ({}) data?'.format(team, year),
                 'name': 'continue',
                 'default': True,
             }]
             answers = prompt(questions)
-            if (answers['continue'] is False):
-                # exit
-                running = False
-            else:
-                # let user select new piece of data
+            if (answers['continue'] is True):
                 questions = [{
                     'type': 'list',
                     'message': 'What data would you like to view?',
@@ -140,11 +136,12 @@ def collect_data(team, year, selection):
                 }]
                 answers = prompt(questions)
                 selection = answers['data_selection']
-
-        print ("bucketwizard shutting down ...")
-
+            else:
+                # user is done looking at the data for this team/year, break
+                running = False
     elif (page.status_code == 404):
-        print("page not found, spelling of team may be incorrect")
+        print("page not found")
+        print("attempted to scrape from: " + url)
 
 
 def main():
@@ -167,9 +164,17 @@ def main():
         'choices': choices
         }]
     answers = prompt(questions)
-    collect_data(
-        answers['team_name'], answers['team_year'], answers['data_selection'])
-
+    collect_data(answers['team_name'], answers['team_year'], answers['data_selection'])
+    # confirm if user wants to view a different team/year
+    questions = [{
+        'type': 'confirm',
+        'message': 'View a different team/year?',
+        'name': 'continue',
+        'default': True,
+    }]
+    answers = prompt(questions)
+    if (answers['continue'] is True):
+        main()
 
 if __name__ == "__main__":
     main()
