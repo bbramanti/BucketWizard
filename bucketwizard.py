@@ -31,10 +31,10 @@ def get_roster(html):
     roster = []
     if (table):
         # get table headers
-        header = table.find('thead')
-        header_row = header.find('tr')
+        header = table.find("thead")
+        header_row = header.find("tr")
         headers = []
-        for th in header_row.find_all('th'):
+        for th in header_row.find_all("th"):
             # check for &nbsp using strip()
             if (th.text.strip()):
                 headers.append(th.text)
@@ -42,9 +42,9 @@ def get_roster(html):
                 # instead of &nbsp
                 headers.append("Birth Country")
         # get table data
-        rows = table.find_all('tr')
+        rows = table.find_all("tr")
         for tr in rows:
-            td = tr.find_all(['td', 'th'])
+            td = tr.find_all(["td", "th"])
             data = [x.text for x in td]
             roster.append(data)
         # remove empty header row
@@ -71,17 +71,17 @@ def get_per_game(html):
     per_game_stats = []
     if (table):
         # get table headers
-        header = table.find('thead')
-        header_row = header.find('tr')
+        header = table.find("thead")
+        header_row = header.find("tr")
         headers = []
-        for th in header_row.find_all('th'):
+        for th in header_row.find_all("th"):
             # check for &nbsp using strip()
             if (th.text.strip()):
                 headers.append(th.text)
         # get table data
-        rows = table.find_all('tr')
+        rows = table.find_all("tr")
         for tr in rows:
-            td = tr.find_all(['td', 'th'])
+            td = tr.find_all(["td", "th"])
             data = [x.text for x in td]
             per_game_stats.append(data)
         # clean up data in both headers, and per_game_stats
@@ -93,38 +93,85 @@ def get_per_game(html):
     else:
         print ("cannot retrieve table")
 
+def clean_game_results(headers, game_results):
+    headers = headers[1:]
+    headers.insert(3, "W/L")
+    # remove all header rows
+    game_results = [game for game in game_results if game[0] != "G"]
+    # remove data that is not needed
+    cleaned_game_results = []
+    for game in game_results:
+        cleaned_game = [value for index,value in enumerate(game) if index not in [0,3,4,8,14]]
+        cleaned_game[2] = "@ " if cleaned_game[2] == "@" else "vs. "
+        cleaned_game[2] = cleaned_game[2] + cleaned_game.pop(3)
+        cleaned_game_results.append(cleaned_game)
+    return headers, cleaned_game_results
+
+def get_game_results(html):
+    table = html.find(id="games")
+    if (table):
+        # get table headers
+        header = table.find("thead")
+        header_row = header.find("tr")
+        headers = []
+        for th in header_row.find_all("th"):
+            # check for &nbsp using strip()
+            if (th.text.strip()):
+                headers.append(th.text)
+        # get table data
+        rows = table.find_all("tr")
+        game_results = []
+        for tr in rows:
+            td = tr.find_all(["td", "th"])
+            data = [x.text for x in td]
+            game_results.append(data)
+        cleaned_headers, cleaned_game_results = clean_game_results(headers, game_results)
+        # final print to user
+        print()
+        print(tabulate(cleaned_game_results, headers=cleaned_headers, tablefmt="github"))
+        print()
+    else:
+        print ("cannot retrieve table")
+
 
 def collect_data(team, year, selection):
     # build out full URL
     selected_team = teams[team]
     selected_year = year[5:]
-    url = "https://www.basketball-reference.com/teams/"
-    url += selected_team+"/"+selected_year+".html"
+    base_url = "https://www.basketball-reference.com/teams/{}/{}.html".format(selected_team, selected_year)
+    games_url = "https://www.basketball-reference.com/teams/{}/{}_games.html".format(selected_team, selected_year)
 
     # print to terminal , and send out request
-    print("Scraping From: " + url)
-    page = requests.get(url)
+    print("Scraping From: {} and {}".format(base_url, games_url))
 
-    if (page.status_code == 200):
-        # decode so we can use regex to remove commenting
-        html = page.content.decode('utf-8')
-        soup = BeautifulSoup(re.sub("<!--|-->", "", html), 'html.parser')
+    # pull both pages
+    base_page = requests.get(base_url)
+    games_page = requests.get(games_url)
+
+    if (base_page.status_code == 200 and games_page.status_code == 200):
+        base_html = base_page.content.decode("utf-8")
+        games_html = games_page.content.decode("utf-8")
+        # use regex to remove commenting
+        base_soup = BeautifulSoup(re.sub("<!--|-->", "", base_html), "html.parser")
+        games_soup = BeautifulSoup(re.sub("<!--|-->", "", games_html), "html.parser")
         running = True
         while (running):
             # view salary data
-            if (selection == 'Player Salaries'):
-                get_salary(soup)
-            if (selection == 'Team Roster'):
-                get_roster(soup)
-            if (selection == 'Per Game'):
-                get_per_game(soup)
+            if (selection == "Player Salaries"):
+                get_salary(base_soup)
+            if (selection == "Team Roster"):
+                get_roster(base_soup)
+            if (selection == "Per Game"):
+                get_per_game(base_soup)
+            if (selection == "Game Results"):
+                get_game_results(games_soup)
 
             # confirm if user wants to view more of this team's stats
             questions = [{
-                'type': 'confirm',
-                'message': 'Continue viewing {} ({}) data?'.format(team, year),
-                'name': 'continue',
-                'default': True,
+                "type": "confirm",
+                "message": "Continue viewing {} ({}) data?".format(team, year),
+                "name": "continue",
+                "default": True,
             }]
             answers = prompt(questions)
             if (answers['continue'] is True):
@@ -132,7 +179,7 @@ def collect_data(team, year, selection):
                     'type': 'list',
                     'message': 'What data would you like to view?',
                     'name': 'data_selection',
-                    'choices': ['Team Roster', 'Player Salaries', 'Per Game']
+                    'choices': choices
                 }]
                 answers = prompt(questions)
                 selection = answers['data_selection']
@@ -141,7 +188,7 @@ def collect_data(team, year, selection):
                 running = False
     elif (page.status_code == 404):
         print("page not found")
-        print("attempted to scrape from: " + url)
+        print("attempted to scrape from: {} and {}".format(base_url, games_url))
 
 
 def main():
