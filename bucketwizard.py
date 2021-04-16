@@ -10,8 +10,8 @@ def get_table_headers(table):
     header_row = table.find("tr")
     # table may have blank columns (no header or values), skip these
     headers = [th.text for th in header_row.find_all("th") if th.text.strip()]
-    # skip first value, always junk
-    return headers[1:]
+    # skip first value if no header exists there
+    return headers if headers[0].strip() else headers[1:]
 
 def get_table_data(table):
     rows = table.find_all("tr")
@@ -23,10 +23,10 @@ def get_table_data(table):
     # skip first entry, always will be headers
     return table_data[1:]
 
-def print_to_terminal(data, headers, format):
+def print_to_terminal(data, headers):
     print()
     print(tabulate(
-        data, headers=headers, tablefmt=format))
+        data, headers=headers, tablefmt="github"))
     print()
 
 def get_salary(html):
@@ -35,7 +35,7 @@ def get_salary(html):
         # remove first entry in each list
         salaries = [x[1:] for x in get_table_data(table)]
         # print results to terminal
-        print_to_terminal(salaries, ["Player", "Salary"], "github")
+        print_to_terminal(salaries, ["Player", "Salary"])
     else:
         print ("cannot retrieve table")
 
@@ -45,18 +45,17 @@ def get_roster(html):
     if (table):
         # get table headers
         headers = get_table_headers(table)
-        # unique updates to header list
-        headers.insert(0, "No.")
+        # add header, not included in html
         headers.insert(6, "Birth Country")
         # get table data
         roster = get_table_data(table)
         # print results to terminal
-        print_to_terminal(roster, headers, "github")
+        print_to_terminal(roster, headers)
     else:
         print ("cannot retrieve table")
 
 def clean_per_game(headers, stats):
-    headers.insert(0, "Name")
+    headers[0] = "Name"
     # remove first row of stats, it restates the headers
     stats = stats[1:]
     # remove first stat for each player (has no value)
@@ -70,21 +69,18 @@ def get_per_game(html):
         # get table headers
         headers = get_table_headers(table)
         # get table data
-        rows = table.find_all("tr")
-        for tr in rows:
-            td = tr.find_all(["td", "th"])
-            data = [x.text for x in td]
-            per_game_stats.append(data)
+        per_game_stats = get_table_data(table)
         # clean up data in both headers, and per_game_stats
         cleaned_headers, cleaned_per_game_stats = clean_per_game(headers, per_game_stats)
         # print results to terminal
-        print_to_terminal(cleaned_per_game_stats, cleaned_headers, "github")
+        print_to_terminal(cleaned_per_game_stats, cleaned_headers)
     else:
         print ("cannot retrieve table")
 
 def clean_game_results(headers, game_results):
+    del headers[0]
     headers.insert(3, "W/L")
-    # remove all header rows
+    # remove any header rows, longer tables have headers appear every certain number of rows
     game_results = [game for game in game_results if game[0] != "G"]
     # remove data that is not needed
     cleaned_game_results = []
@@ -105,7 +101,7 @@ def get_game_results(html):
         # unique cleaning done for game results data
         cleaned_headers, cleaned_game_results = clean_game_results(headers, game_results)
         # print results to terminal
-        print_to_terminal(cleaned_game_results, cleaned_headers, "github")
+        print_to_terminal(cleaned_game_results, cleaned_headers)
     else:
         print ("cannot retrieve table")
 
