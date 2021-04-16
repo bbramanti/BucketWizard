@@ -5,6 +5,12 @@ from PyInquirer import prompt
 from tabulate import tabulate
 from teams import teams, seasons, choices
 
+def get_table_headers(table):
+    # find tr element
+    header_row = table.find("tr")
+    # table may have blank columns (no header or values), skip these
+    headers = [th.text for th in header_row.find_all("th") if th.text.strip()]
+    return headers
 
 def get_salary(html):
     table = html.find(id="salaries2")
@@ -31,16 +37,8 @@ def get_roster(html):
     roster = []
     if (table):
         # get table headers
-        header = table.find("thead")
-        header_row = header.find("tr")
-        headers = []
-        for th in header_row.find_all("th"):
-            # check for &nbsp using strip()
-            if (th.text.strip()):
-                headers.append(th.text)
-            else:
-                # instead of &nbsp
-                headers.append("Birth Country")
+        headers = get_table_headers(table)
+        headers.insert(6, "Birth Country")
         # get table data
         rows = table.find_all("tr")
         for tr in rows:
@@ -71,13 +69,7 @@ def get_per_game(html):
     per_game_stats = []
     if (table):
         # get table headers
-        header = table.find("thead")
-        header_row = header.find("tr")
-        headers = []
-        for th in header_row.find_all("th"):
-            # check for &nbsp using strip()
-            if (th.text.strip()):
-                headers.append(th.text)
+        headers = get_table_headers(table)
         # get table data
         rows = table.find_all("tr")
         for tr in rows:
@@ -111,13 +103,7 @@ def get_game_results(html):
     table = html.find(id="games")
     if (table):
         # get table headers
-        header = table.find("thead")
-        header_row = header.find("tr")
-        headers = []
-        for th in header_row.find_all("th"):
-            # check for &nbsp using strip()
-            if (th.text.strip()):
-                headers.append(th.text)
+        headers = get_table_headers(table)
         # get table data
         rows = table.find_all("tr")
         game_results = []
