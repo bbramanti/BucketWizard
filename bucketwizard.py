@@ -56,8 +56,6 @@ def get_roster(html):
 
 def clean_per_game(headers, stats):
     headers[0] = "Name"
-    # remove first row of stats, it restates the headers
-    stats = stats[1:]
     # remove first stat for each player (has no value)
     stats = [player[1:] for player in stats]
     return headers, stats
